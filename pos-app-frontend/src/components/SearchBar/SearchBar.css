@@ -1,0 +1,28 @@
+.search-wrapper {
+flex: 1;
+display: flex;
+align-items: center;
+gap: 10px;
+
+height: 46px;
+padding: 0 16px;
+
+border: 1px solid #e6e6e6;
+border-radius: 12px;
+
+background: white;
+}
+
+.search-icon {
+color: #9b9b9b;
+}
+
+.search-bar {
+width: 100%;
+border: none;
+outline: none;
+background: transparent;
+
+font-size: 14px;
+color: #444;
+}
