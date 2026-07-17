@@ -305,9 +305,6 @@ function Kasir() {
         })),
       };
 
-      console.log("USER =", user);
-      console.log("PAYLOAD =", payload);
-
       console.log("USER LOGIN", user);
       console.log("PAYLOAD", payload);
 
