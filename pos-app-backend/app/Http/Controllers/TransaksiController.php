@@ -123,7 +123,11 @@ class TransaksiController extends Controller
     public function destroy(int $id)
     {
         $transaksi = Transaksi::findOrFail($id);
-        $transaksi->delete();
+
+        DB::transaction(function () use ($transaksi) {
+            $transaksi->detailTransaksi()->delete();
+            $transaksi->delete();
+        });
 
         return response()->json([
             'message' => 'Transaksi berhasil dihapus'
