@@ -10,10 +10,17 @@ use Illuminate\Support\Facades\Log;
 
 class ProdukController extends Controller
 {
-    public function index()
-    {
-        return Produk::all()->map(fn (Produk $produk) => $this->withImageData($produk));
-    }
+    public function index(Request $request)
+{
+    $query = Produk::query();
+
+    if ($request->filled('cabang_id')) {
+    $query->where('cabang_id', $request->cabang_id);
+}
+
+    return $query->get()
+        ->map(fn (Produk $produk) => $this->withImageData($produk));
+}
 
     public function store(Request $request)
     {
@@ -21,15 +28,16 @@ class ProdukController extends Controller
         Log::info('Produk store - has gambar:', ['hasFile' => $request->hasFile('gambar')]);
 
         $data = $request->only([
-            'kategori_id',
-            'supplier_id',
-            'kode_produk',
-            'nama_produk',
-            'harga_beli',
-            'harga_eceran',
-            'harga_grosir',
-            'stok',
-        ]);
+    'kategori_id',
+    'supplier_id',
+    'cabang_id',
+    'kode_produk',
+    'nama_produk',
+    'harga_beli',
+    'harga_eceran',
+    'harga_grosir',
+    'stok',
+]);
 
         $data['gambar'] = $this->handleImageUpload($request);
 
@@ -52,15 +60,16 @@ class ProdukController extends Controller
         Log::info('Produk update - has gambar:', ['hasFile' => $request->hasFile('gambar')]);
 
         $data = $request->only([
-            'kategori_id',
-            'supplier_id',
-            'kode_produk',
-            'nama_produk',
-            'harga_beli',
-            'harga_eceran',
-            'harga_grosir',
-            'stok',
-        ]);
+    'kategori_id',
+    'supplier_id',
+    'cabang_id',
+    'kode_produk',
+    'nama_produk',
+    'harga_beli',
+    'harga_eceran',
+    'harga_grosir',
+    'stok',
+]);
 
         if ($request->hasFile('gambar')) {
             $data['gambar'] = $this->handleImageUpload($request, $produk->gambar);

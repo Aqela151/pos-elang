@@ -15,5 +15,6 @@ class Member extends Model
     'alamat',
     'level',
     'total_transaksi',
+    'cabang_id',
 ];
 }

@@ -10,22 +10,47 @@ use Illuminate\Support\Facades\DB;
 
 class TransaksiController extends Controller
 {
-    public function index()
-{
-    return Transaksi::with('detailTransaksi')
-        ->orderBy('id', 'desc')
-        ->get();
-}
+    public function index(Request $request)
+    {
+        $query = Transaksi::with('detailTransaksi');
 
-public function histori()
-{
-    return Transaksi::with(['detailTransaksi.produk', 'member', 'cabang'])
-        ->orderBy('tanggal', 'desc')
-        ->get();
-}
+        if ($request->filled('cabang_id')) {
+            $query->where('cabang_id', $request->cabang_id);
+        }
+
+        return $query->orderBy('id', 'desc')->get();
+    }
+
+    public function histori(Request $request)
+    {
+        $query = Transaksi::with([
+            'detailTransaksi.produk',
+            'member',
+            'cabang'
+        ]);
+
+        if ($request->filled('cabang_id')) {
+            $query->where('cabang_id', $request->cabang_id);
+        }
+
+        return $query
+            ->orderBy('tanggal', 'desc')
+            ->get();
+    }
 
     public function store(Request $request)
     {
+        // Validasi dasar: pastikan bayar tidak kurang dari total sebelum apa pun disimpan
+        $total = (float) $request->total;
+        $bayar = (float) $request->bayar;
+
+        if ($bayar < $total) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Uang pembayaran kurang.'
+            ], 422);
+        }
+
         DB::beginTransaction();
 
         try {
@@ -85,23 +110,23 @@ public function histori()
         }
     }
 
-   public function show(int $id)
-{
-    return Transaksi::with('detailTransaksi')->findOrFail($id);
-}
+    public function show(int $id)
+    {
+        return Transaksi::with('detailTransaksi')->findOrFail($id);
+    }
 
-public function update(Request $request, int $id)
-{
-    //
-}
+    public function update(Request $request, int $id)
+    {
+        //
+    }
 
-public function destroy(int $id)
-{
-    $transaksi = Transaksi::findOrFail($id);
-    $transaksi->delete();
+    public function destroy(int $id)
+    {
+        $transaksi = Transaksi::findOrFail($id);
+        $transaksi->delete();
 
-    return response()->json([
-        'message' => 'Transaksi berhasil dihapus'
-    ]);
-}
+        return response()->json([
+            'message' => 'Transaksi berhasil dihapus'
+        ]);
+    }
 }

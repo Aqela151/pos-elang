@@ -7,14 +7,26 @@ use Illuminate\Http\Request;
 
 class MemberController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        return Member::all();
+        $query = Member::query();
+
+        if ($request->filled('cabang_id')) {
+            $query->where('cabang_id', $request->cabang_id);
+        }
+
+        return $query->get();
     }
 
     public function store(Request $request)
     {
-        $member = Member::create($request->all());
+        $data = $request->all();
+
+        if ($request->filled('cabang_id')) {
+            $data['cabang_id'] = $request->cabang_id;
+        }
+
+        $member = Member::create($data);
 
         return response()->json([
             'message' => 'Member berhasil ditambahkan',
@@ -29,7 +41,13 @@ class MemberController extends Controller
 
     public function update(Request $request, Member $member)
     {
-        $member->update($request->all());
+        $data = $request->all();
+
+        if (! $request->has('cabang_id')) {
+            unset($data['cabang_id']);
+        }
+
+        $member->update($data);
 
         return response()->json([
             'message' => 'Member berhasil diupdate',
