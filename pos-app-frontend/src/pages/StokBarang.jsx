@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useAuth } from "../context/AuthContext";
 import { Eye, Pencil, Trash2, Search, SlidersHorizontal, ChevronDown, Plus } from "lucide-react";
 import Card from "../components/Card/Card";
 import TambahBarangModal from "../components/TambahBarangModal/TambahBarangModal";
@@ -18,6 +19,7 @@ const categoryLabelMap = {
 };
 
 function StokBarang() {
+  const { user } = useAuth();
   const [products, setProducts] = useState([]);
   const [tambahOpen, setTambahOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
@@ -30,24 +32,38 @@ function StokBarang() {
   const [sortOrder, setSortOrder] = useState("newest");
 
   useEffect(() => {
-    getProduk();
-  }, []);
+    if(user){
+        getProduk();
+    }
+}, [user]);
 
   const getProduk = async () => {
-    try {
-      const res = await api.get("/produk");
-      const data = res?.data;
-      const normalized = Array.isArray(data)
-        ? data
-        : Array.isArray(data?.data)
-          ? data.data
-          : [];
-      setProducts(normalized);
-    } catch (err) {
-      console.log(err);
-      setProducts([]);
-    }
-  };
+  try {
+    console.log("USER LOGIN:", user);
+
+    const res = await api.get("/produk", {
+      params: user?.cabang_id
+        ? {
+            cabang_id: user.cabang_id,
+          }
+        : {},
+    });
+
+    console.log("DATA PRODUK:", res.data);
+
+    const data = res.data;
+    const normalized = Array.isArray(data)
+      ? data
+      : Array.isArray(data?.data)
+      ? data.data
+      : [];
+
+    setProducts(normalized);
+  } catch (err) {
+    console.error(err);
+    setProducts([]);
+  }
+};
 
   const handleView = (barang) => {
     setSelectedBarang(barang);

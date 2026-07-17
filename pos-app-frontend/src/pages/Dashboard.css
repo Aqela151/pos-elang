@@ -26,10 +26,10 @@
 }
 .card h2 {
   font-size: 32px;
-  font-weight: 800;
+  font-weight: 600;
   color: #111;
   margin: 0 0 8px;
-  letter-spacing: -1px;
+  letter-spacing: -0.6px;
 }
 .card p {
   font-size: 12px;

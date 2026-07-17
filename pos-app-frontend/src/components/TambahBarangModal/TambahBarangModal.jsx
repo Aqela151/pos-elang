@@ -2,8 +2,11 @@ import { useState, useRef } from "react";
 import Modal from "../Modal/Modal";
 import { CloudUpload, Check } from "lucide-react";
 import api from "../../services/api";
+import { useAuth } from "../../context/AuthContext";
 
 export default function TambahBarangModal({ isOpen, onClose, onSuccess }) {
+  const { user } = useAuth();
+
   const [preview, setPreview] = useState(null);
   const [imageFile, setImageFile] = useState(null);
   const [submitting, setSubmitting] = useState(false);
@@ -59,6 +62,12 @@ export default function TambahBarangModal({ isOpen, onClose, onSuccess }) {
       Object.entries(form).forEach(([key, value]) => {
         formData.append(key, value ?? "");
       });
+
+      formData.append("cabang_id", user?.cabang_id ?? "");
+      formData.append("kasir_id", user?.id ?? "");
+
+      console.log("USER LOGIN", user);
+      console.log("PAYLOAD", Object.fromEntries(formData.entries()));
 
       // hanya kirim 1 nama field yang jelas, sesuai yang dibaca controller
       if (imageFile) {

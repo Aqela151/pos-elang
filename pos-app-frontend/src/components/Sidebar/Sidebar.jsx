@@ -1,5 +1,7 @@
+import { useState, useRef, useEffect } from "react";
+import { NavLink } from "react-router-dom";
 import "./Sidebar.css";
-import { PanelLeft } from "lucide-react";
+import { PanelLeft, MoreVertical } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
 import SidebarItem from "../SidebarItem/SidebarItem";
 import dashboardIcon from "../../assets/icons/dashboard.png";
@@ -12,6 +14,9 @@ import logoutIcon    from "../../assets/icons/logout.png";
 
 function Sidebar({ isOpen, onClose, collapsed, onToggleCollapse }) {
   const { user } = useAuth();
+  const [menuOpen, setMenuOpen] = useState(false);
+  const menuRef = useRef(null);
+
   const displayName = user?.nama || user?.name || user?.username || user?.email || "Pengguna";
   const displayRole = user?.role === "kasir" ? "Kasir" : user?.role === "admin" ? "Admin" : "Pengguna";
   const avatarInitial = displayName?.trim()?.[0]?.toUpperCase() || "P";
@@ -19,7 +24,6 @@ function Sidebar({ isOpen, onClose, collapsed, onToggleCollapse }) {
   const menuItems = user?.role === "kasir"
     ? [
         { text: "Kasir", icon: keranjangIcon, to: "/kasir" },
-        { text: "Settings", icon: settingsIcon, to: "/settings" },
       ]
     : [
         { text: "Dashboard", icon: dashboardIcon, to: "/dashboard" },
@@ -28,6 +32,23 @@ function Sidebar({ isOpen, onClose, collapsed, onToggleCollapse }) {
         { text: "Data Member", icon: memberIcon, to: "/data-member" },
         { text: "Laporan", icon: laporanIcon, to: "/laporan" },
       ];
+
+  // tutup dropdown kalau klik di luar area profile
+  useEffect(() => {
+    if (!menuOpen) return;
+    const handleClickOutside = (e) => {
+      if (menuRef.current && !menuRef.current.contains(e.target)) {
+        setMenuOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [menuOpen]);
+
+  const handleMenuItemClick = () => {
+    setMenuOpen(false);
+    onClose?.();
+  };
 
   return (
     <aside className={`sidebar ${isOpen ? "open" : ""} ${collapsed ? "collapsed" : ""}`}>
@@ -55,21 +76,49 @@ function Sidebar({ isOpen, onClose, collapsed, onToggleCollapse }) {
 
       <div className="sidebar-spacer" />
 
-      <div className="sidebar-profile">
-        <div className="sidebar-avatar-placeholder">{avatarInitial}</div>
-        {!collapsed && (
-          <div className="sidebar-profile-info">
-            <p className="sidebar-profile-name">{displayName}</p>
-            <span className="sidebar-profile-badge">{displayRole}</span>
+      <div className="sidebar-divider" />
+
+      <div className="sidebar-profile-wrap" ref={menuRef}>
+        {menuOpen && (
+          <div className="sidebar-profile-menu">
+            <NavLink
+              to="/settings"
+              className="sidebar-profile-menu-item"
+              onClick={handleMenuItemClick}
+            >
+              <img src={settingsIcon} alt="" className="sidebar-profile-menu-icon" draggable={false} />
+              <span>Settings</span>
+            </NavLink>
+            <NavLink
+              to="/logout"
+              className="sidebar-profile-menu-item sidebar-profile-menu-item--logout"
+              onClick={handleMenuItemClick}
+            >
+              <img src={logoutIcon} alt="" className="sidebar-profile-menu-icon" draggable={false} />
+              <span>Log out</span>
+            </NavLink>
           </div>
         )}
-      </div>
 
-      <div className="sidebar-divider" />
-      <ul className="sidebar-bottom">
-        <SidebarItem text="Settings" icon={settingsIcon} to="/settings" onClick={onClose} collapsed={collapsed} />
-        <SidebarItem text="Log out"  icon={logoutIcon}   to="/logout"   isLogout collapsed={collapsed} />
-      </ul>
+        <div className="sidebar-profile">
+          <div className="sidebar-avatar-placeholder">{avatarInitial}</div>
+          {!collapsed && (
+            <div className="sidebar-profile-info">
+              <p className="sidebar-profile-name">{displayName}</p>
+              <span className="sidebar-profile-badge">{displayRole}</span>
+            </div>
+          )}
+          {!collapsed && (
+            <button
+              className="sidebar-profile-more"
+              aria-label="Menu akun"
+              onClick={() => setMenuOpen((v) => !v)}
+            >
+              <MoreVertical size={16} />
+            </button>
+          )}
+        </div>
+      </div>
 
     </aside>
   );

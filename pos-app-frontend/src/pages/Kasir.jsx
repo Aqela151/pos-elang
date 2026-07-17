@@ -1,8 +1,9 @@
 import { useState, useEffect } from "react";
-import { Search, Plus, Minus, QrCode, Banknote, User, Package, Wrench } from "lucide-react";
+import { Search, Plus, Minus, Banknote, User, Package, Wrench } from "lucide-react";
 import akiImg from "../assets/images/image1.png";
 import "./Kasir.css";
 import api from "../services/api";
+import { useAuth } from "../context/AuthContext";
 
 const fmt = (n) => "Rp " + (n || 0).toLocaleString("id-ID");
 
@@ -88,6 +89,10 @@ const getProductImage = (p) => {
 };
 
 function Kasir() {
+  const { user } = useAuth();
+  const cabangId = user?.cabang_id;
+  const kasirId = user?.id;
+
   const [kategori, setKategori] = useState("Produk");
   const [search, setSearch] = useState("");
   const [keranjang, setKeranjang] = useState([]);
@@ -100,13 +105,15 @@ function Kasir() {
   const [lastTransaction, setLastTransaction] = useState(null);
 
   useEffect(() => {
+    // tunggu sampai data user (beserta cabang_id-nya) tersedia dari AuthContext
+    if (!cabangId) return;
     getProduk();
     getMembers();
-  }, []);
+  }, [cabangId]);
 
   const getProduk = async () => {
     try {
-      const res = await api.get("/produk");
+      const res = await api.get("/produk", { params: { cabang_id: cabangId } });
       console.log("[Kasir] produk response:", res.data);
       setProdukList(res.data);
     } catch (err) {
@@ -116,7 +123,7 @@ function Kasir() {
 
   const getMembers = async () => {
     try {
-      const res = await api.get("/member");
+      const res = await api.get("/member", { params: { cabang_id: cabangId } });
       setMembers(res.data || []);
     } catch (err) {
       console.log(err);
@@ -284,8 +291,8 @@ function Kasir() {
 
     try {
       const payload = {
-        cabang_id: 1,
-        kasir_id: 1,
+        cabang_id: user?.cabang_id,
+        kasir_id: user?.id,
         member_id: selectedMember?.id || null,
         total: total,
         metode_bayar: metodeBayar,
@@ -297,6 +304,12 @@ function Kasir() {
           harga: Number(item.harga_eceran),
         })),
       };
+
+      console.log("USER =", user);
+      console.log("PAYLOAD =", payload);
+
+      console.log("USER LOGIN", user);
+      console.log("PAYLOAD", payload);
 
       const res = await api.post("/transaksi", payload);
       const kodeTransaksi = res.data?.kode_transaksi || generateTrxCode();
@@ -323,6 +336,10 @@ function Kasir() {
       setBayar("");
       getProduk();
     } catch (error) {
+      console.log(error.response);
+      console.log(error.response?.data);
+      console.log(error.response?.data?.errors);
+
       const backendMessage = error.response?.data?.message;
       if (backendMessage === "Uang pembayaran kurang.") {
         alert("Transaksi gagal");
@@ -525,13 +542,6 @@ function Kasir() {
             >
               <Banknote size={16} />
               <span>Uang Tunai</span>
-            </button>
-            <button
-              className={`kasir-metode-btn ${metodeBayar === "qris" ? "active" : ""}`}
-              onClick={() => setMetodeBayar("qris")}
-            >
-              <QrCode size={16} />
-              <span>QRIS</span>
             </button>
           </div>
 

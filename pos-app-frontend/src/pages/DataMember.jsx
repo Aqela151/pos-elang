@@ -5,12 +5,14 @@ import Card from "../components/Card/Card";
 import TambahMemberModal from "../components/TambahMemberModal/TambahMemberModal";
 import EditMemberModal from "../components/EditMemberModal/EditMemberModal";
 import DeleteConfirmModal from "../components/DeleteConfirmModal/DeleteConfirmModal";
+import { useAuth } from "../context/AuthContext";
 import "./DataMember.css";
 
 
 const levelLabel = { silver: "Silver", gold: "Gold", platinum: "Platinum" };
 
 function DataMember() {
+  const { user } = useAuth();
   const [members, setMembers] = useState([]);
   const [tambahOpen, setTambahOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
@@ -23,7 +25,11 @@ function DataMember() {
 
 const getMember = async () => {
   try {
-    const res = await api.get("/member");
+    const res = await api.get("/member", {
+      params: {
+        cabang_id: user?.cabang_id,
+      },
+    });
     setMembers(res.data);
   } catch (err) {
     console.log(err);

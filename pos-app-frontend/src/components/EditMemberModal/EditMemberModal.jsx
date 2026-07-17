@@ -2,8 +2,11 @@ import { useState, useEffect } from "react";
 import Modal from "../Modal/Modal";
 import { Check } from "lucide-react";
 import api from "../../services/api";
+import { useAuth } from "../../context/AuthContext";
 
 export default function EditMemberModal({ isOpen, onClose, member, onSave }) {
+  const { user } = useAuth();
+
   const [form, setForm] = useState({
   nama:"",
   no_hp:"",
@@ -33,11 +36,21 @@ export default function EditMemberModal({ isOpen, onClose, member, onSave }) {
 
   const handleSave = async () => {
   try {
-    await api.put(`/member/${member.id}`, form);
+    const payload = {
+      ...form,
+      cabang_id: user?.cabang_id,
+      kasir_id: user?.id,
+    };
+
+    console.log("USER LOGIN", user);
+    console.log("PAYLOAD", payload);
+
+    await api.put(`/member/${member.id}`, payload);
 
     onSave({
       ...member,
       ...form,
+      cabang_id: user?.cabang_id,
     });
 
     alert("Member berhasil diupdate");

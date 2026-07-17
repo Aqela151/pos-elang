@@ -1,0 +1,164 @@
+.delete-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(20, 20, 20, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 16px;
+}
+
+.delete-modal {
+  width: 100%;
+  max-width: 380px;
+  background: #fff;
+  border-radius: 20px;
+  overflow: hidden;
+  font-family: 'Geist', sans-serif;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
+  animation: deleteModalIn 0.15s ease-out;
+}
+
+@keyframes deleteModalIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.delete-modal-header {
+  display: flex;
+  justify-content: flex-end;
+  padding: 14px 14px 0;
+}
+
+.delete-modal-close {
+  border: none;
+  background: #f5f5f5;
+  color: #888;
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.delete-modal-close:hover {
+  background: #eee;
+  color: #444;
+}
+
+.delete-modal-body {
+  padding: 0 26px 8px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.delete-modal-icon {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: #ffeaea;
+  color: #ef4444;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 14px;
+}
+
+.delete-modal-body h3 {
+  font-size: 16px;
+  font-weight: 700;
+  color: #111;
+  margin: 0 0 8px;
+}
+
+.delete-modal-body p {
+  font-size: 13px;
+  color: #888;
+  line-height: 1.5;
+  margin: 0;
+}
+
+.delete-modal-body strong {
+  color: #444;
+}
+
+.delete-modal-error {
+  margin-top: 14px;
+  width: 100%;
+  background: #ffeaea;
+  color: #ef4444;
+  font-size: 12px;
+  font-weight: 500;
+  padding: 10px 12px;
+  border-radius: 10px;
+}
+
+.delete-modal-footer {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  padding: 20px 26px 26px;
+}
+
+.btn-secondary {
+  height: 42px;
+  flex: 1;
+  padding: 0 18px;
+  border-radius: 10px;
+  border: 1px solid #e6e6e6;
+  background: #fff;
+  color: #666;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: 'Geist', sans-serif;
+}
+
+.btn-secondary:hover {
+  background: #f7f7f7;
+}
+
+.btn-secondary:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.btn-danger {
+  height: 42px;
+  flex: 1;
+  padding: 0 18px;
+  border-radius: 10px;
+  border: none;
+  background: #ef4444;
+  color: #fff;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: 'Geist', sans-serif;
+}
+
+.btn-danger:hover {
+  background: #d93a3a;
+}
+
+.btn-danger:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+
+@media (max-width: 480px) {
+  .delete-modal {
+    max-width: 100%;
+  }
+}

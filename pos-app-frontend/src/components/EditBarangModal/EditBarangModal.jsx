@@ -2,8 +2,10 @@ import { useState, useEffect, useRef } from "react";
 import Modal from "../Modal/Modal";
 import { Check, CloudUpload } from "lucide-react";
 import api from "../../services/api";
+import { useAuth } from "../../context/AuthContext";
 
 export default function EditBarangModal({ isOpen, onClose, barang, onSave, onSuccess }) {
+  const { user } = useAuth();
   const [imageFile, setImageFile] = useState(null);
   const [form, setForm] = useState({
     nama_produk: "",
@@ -63,13 +65,6 @@ export default function EditBarangModal({ isOpen, onClose, barang, onSave, onSuc
     }
   };
 
-  const appendImageToFormData = (formData, file) => {
-    if (!file) return;
-    ["gambar", "foto", "foto_produk", "image", "file", "photo"].forEach((fieldName) => {
-      formData.append(fieldName, file, file.name);
-    });
-  };
-
   const handleSave = async () => {
     if (submitting) return;
     setSubmitting(true);
@@ -81,8 +76,14 @@ export default function EditBarangModal({ isOpen, onClose, barang, onSave, onSuc
         formData.append(key, value ?? "");
       });
 
+      formData.append("cabang_id", user?.cabang_id ?? "");
+      formData.append("kasir_id", user?.id ?? "");
+
+      console.log("USER LOGIN", user);
+      console.log("PAYLOAD", Object.fromEntries(formData.entries()));
+
       if (imageFile) {
-        appendImageToFormData(formData, imageFile);
+        formData.append("gambar", imageFile, imageFile.name);
       }
 
       // Laravel file upload with method override is safer via POST + _method=PUT
@@ -98,6 +99,7 @@ export default function EditBarangModal({ isOpen, onClose, barang, onSave, onSuc
       const updatedItem = res.data?.data || res.data || {
         ...barang,
         ...form,
+        cabang_id: user?.cabang_id,
         stok: Number(form.stok),
       };
 

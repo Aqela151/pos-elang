@@ -2,12 +2,15 @@ import { useState } from "react";
 import Modal from "../Modal/Modal";
 import { Check } from "lucide-react";
 import api from "../../services/api";
+import { useAuth } from "../../context/AuthContext";
 
 export default function TambahMemberModal({
   isOpen,
   onClose,
   onSuccess,
 }) {
+  const { user } = useAuth();
+
   const initialForm = {
     nama: "",
     no_hp: "",
@@ -32,7 +35,16 @@ export default function TambahMemberModal({
 
   const handleSubmit = async () => {
     try {
-      await api.post("/member", form);
+      const payload = {
+        ...form,
+        cabang_id: user?.cabang_id,
+        kasir_id: user?.id,
+      };
+
+      console.log("USER LOGIN", user);
+      console.log("PAYLOAD", payload);
+
+      await api.post("/member", payload);
 
       alert("Member berhasil ditambahkan");
       onSuccess(); // ambil ulang data member

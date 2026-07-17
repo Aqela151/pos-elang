@@ -10,6 +10,7 @@ import {
   CartesianGrid,
 } from "recharts";
 import api from "../services/api";
+import { useAuth } from "../context/AuthContext";
 
 const fmt = (n) => "Rp " + Number(n || 0).toLocaleString("id-ID");
 
@@ -21,29 +22,43 @@ const categoryLabelMap = {
 };
 
 function Dashboard() {
+  const { user } = useAuth();
+  const cabangId = user?.cabang_id;
+
   const [products, setProducts] = useState([]);
   const [members, setMembers] = useState([]);
   const [transactions, setTransactions] = useState([]);
+  const [allTransactions, setAllTransactions] = useState([]);
+  const [cabang, setCabang] = useState([]);
 
   useEffect(() => {
+    // Tunggu sampai data user (beserta cabang_id-nya) tersedia dari AuthContext
+    if (!cabangId) return;
+
     const fetchData = async () => {
       try {
-        const [produkRes, memberRes, transaksiRes] = await Promise.all([
-          api.get("/produk"),
-          api.get("/member"),
+        const [produkRes, memberRes, transaksiRes, allTransaksiRes, cabangRes] = await Promise.all([
+          api.get("/produk", { params: { cabang_id: cabangId } }),
+          api.get("/member", { params: { cabang_id: cabangId } }),
+          // Transaksi milik cabang login saja — dipakai untuk semua card & grafik dashboard
+          api.get("/transaksi/histori", { params: { cabang_id: cabangId } }),
+          // Transaksi SEMUA cabang (tanpa cabang_id) — khusus untuk widget Performa Cabang
           api.get("/transaksi/histori"),
+          api.get("/cabang"),
         ]);
 
         setProducts(produkRes.data || []);
         setMembers(memberRes.data || []);
         setTransactions(transaksiRes.data || []);
+        setAllTransactions(allTransaksiRes.data || []);
+        setCabang(cabangRes.data || []);
       } catch (err) {
         console.log(err);
       }
     };
 
     fetchData();
-  }, []);
+  }, [cabangId]);
 
   const getCategoryLabel = (product) => {
     const rawValue = product.kategori_name || product.kategori || product.category_name || product.category || product.kategori_id;
@@ -96,33 +111,48 @@ function Dashboard() {
     return Object.values(map).sort((a, b) => a.month.localeCompare(b.month)).slice(-6);
   }, [transactions]);
 
+  // Ambil id cabang dari sebuah transaksi (mendukung beberapa kemungkinan nama field)
+  const getTrxCabangId = (trx) =>
+    trx.cabang_id ?? trx.id_cabang ?? trx.cabang?.id ?? trx.branch_id ?? trx.branch?.id ?? null;
+
+  // Ambil nama cabang dari data tabel cabang (mendukung beberapa kemungkinan nama field)
+  const getCabangName = (c) =>
+    c.nama_cabang || c.nama || c.name || c.branch_name || `Cabang ${c.id}`;
+
   const branchData = useMemo(() => {
-    const map = {};
+    // Performa Cabang SENGAJA menampilkan SEMUA cabang, tidak mengikuti cabang login.
+    // Karena itu total omzet per cabang dihitung dari `allTransactions`
+    // (transaksi semua cabang, tanpa filter cabang_id), bukan dari `transactions`
+    // yang sudah difilter untuk cabang yang sedang login.
+    const list = cabang.map((c) => {
+      const total = allTransactions.reduce((sum, trx) => {
+        const trxCabangId = getTrxCabangId(trx);
+        if (trxCabangId !== null && String(trxCabangId) === String(c.id)) {
+          return sum + Number(trx.total || 0);
+        }
+        return sum;
+      }, 0);
 
-    transactions.forEach((trx) => {
-      const branchName =
-        trx.cabang?.nama ||
-        trx.cabang_name ||
-        trx.branch?.nama ||
-        trx.branch_name ||
-        "Cabang Utama";
-
-      if (!map[branchName]) {
-        map[branchName] = { name: branchName, value: 0 };
-      }
-
-      map[branchName].value += Number(trx.total || 0);
+      return {
+        name: getCabangName(c),
+        value: total,
+      };
     });
 
-    const list = Object.values(map).sort((a, b) => b.value - a.value).slice(0, 4);
     const maxValue = Math.max(1, ...list.map((item) => item.value));
 
-    return list.map((item) => ({
-      ...item,
-      val: fmt(item.value),
-      w: `${Math.max(25, Math.round((item.value / maxValue) * 100))}%`,
-    }));
-  }, [transactions]);
+    return list.map((item) => {
+      const ratio = item.value / maxValue;
+      const normalized = Math.sqrt(Math.max(0, ratio));
+      const width = Math.round(Math.max(25, Math.min(100, normalized * 100)));
+
+      return {
+        ...item,
+        val: fmt(item.value),
+        w: `${item.value === 0 ? 25 : width}%`,
+      };
+    });
+  }, [cabang, allTransactions]);
 
   const criticalStockItems = useMemo(() => {
     return products
