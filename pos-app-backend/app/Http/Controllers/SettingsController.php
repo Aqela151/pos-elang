@@ -76,12 +76,11 @@ class SettingsController extends Controller
             }
 
             if (!empty($data['akun']) && ($user = Auth::user())) {
-                DB::table('users')->where('id', $user->id)->update([
-                    'name' => $data['akun']['nama_lengkap'] ?? $user->name,
-                    'email' => $data['akun']['email'] ?? $user->email,
-                    'updated_at' => now(),
-                ]);
-            }
+    DB::table('users')->where('id', $user->id)->update([
+        'nama' => $data['akun']['nama_lengkap'] ?? $user->nama,
+        'email' => $data['akun']['email'] ?? $user->email,
+    ]);
+}
 
             foreach ($data['notifikasi'] ?? [] as $item) {
                 DB::table('pengaturan_notifikasi')->where('id', $item['id'])->update([

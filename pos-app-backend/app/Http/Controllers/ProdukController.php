@@ -10,13 +10,13 @@ use Illuminate\Support\Facades\Log;
 
 class ProdukController extends Controller
 {
-    public function index(Request $request)
+   public function index(Request $request)
 {
-    $query = Produk::query();
+    $query = Produk::where('is_active', 1);
 
     if ($request->filled('cabang_id')) {
-    $query->where('cabang_id', $request->cabang_id);
-}
+        $query->where('cabang_id', $request->cabang_id);
+    }
 
     return $query->get()
         ->map(fn (Produk $produk) => $this->withImageData($produk));
@@ -84,13 +84,31 @@ class ProdukController extends Controller
     }
 
     public function destroy(Produk $produk)
-    {
+{
+
+    try {
         $produk->delete();
 
         return response()->json([
-            'message' => 'Produk berhasil dihapus',
+            'success' => true,
+            'message' => 'Produk berhasil dihapus'
         ]);
+    } catch (\Illuminate\Database\QueryException $e) {
+
+        if ($e->getCode() == 23000) {
+
+            $produk->is_active = 0;
+            $produk->save();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Produk tidak bisa dihapus karena sudah dipakai transaksi. Produk dinonaktifkan.'
+            ]);
+        }
+
+        throw $e;
     }
+}
 
     private function handleImageUpload(Request $request, ?string $previousImage = null): ?string
     {

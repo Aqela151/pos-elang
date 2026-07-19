@@ -21,5 +21,6 @@ class Produk extends Model
     'harga_grosir',
     'stok',
     'gambar',
+    'is_active',
 ];
 }
