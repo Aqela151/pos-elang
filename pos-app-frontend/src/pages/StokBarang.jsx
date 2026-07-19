@@ -9,6 +9,7 @@ import ViewBarangModal from "../components/ViewBarangModal/ViewBarangModal";
 import "./StokBarang.css";
 import api from "../services/api";
 
+
 const statusLabel = { aman: "Aman", menipis: "Menipis", habis: "Habis" };
 
 const categoryLabelMap = {
@@ -21,6 +22,7 @@ const categoryLabelMap = {
 function StokBarang() {
   const { user } = useAuth();
   const [products, setProducts] = useState([]);
+  const [categories, setCategories] = useState([]);
   const [tambahOpen, setTambahOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
@@ -34,6 +36,7 @@ function StokBarang() {
   useEffect(() => {
     if(user){
         getProduk();
+        fetchCategories();
     }
 }, [user]);
 
@@ -62,6 +65,32 @@ function StokBarang() {
   } catch (err) {
     console.error(err);
     setProducts([]);
+  }
+};
+
+const fetchCategories = async () => {
+  try {
+    // try a few possible endpoints; adapt to your backend
+    const endpoints = ["/kategori", "/kategori-produk", "/categories", "/category"];
+    for (const ep of endpoints) {
+      try {
+        const res = await api.get(ep);
+        const data = res.data;
+        const list = Array.isArray(data) ? data : Array.isArray(data?.data) ? data.data : [];
+        if (list && list.length) {
+          const normalized = list.map((c) => ({
+            id: c.id ?? c.kategori_id ?? c.category_id,
+            nama: c.nama || c.name || c.nama_kategori || c.category_name || c.label,
+          }));
+          setCategories(normalized);
+          return;
+        }
+      } catch (e) {
+        // ignore and try next endpoint
+      }
+    }
+  } catch (err) {
+    console.error("Gagal memuat kategori:", err);
   }
 };
 
@@ -97,15 +126,21 @@ function StokBarang() {
   };
 
   const getCategoryLabel = (product) => {
-    const rawValue = product.kategori_name || product.kategori || product.category_name || product.category || product.kategori_id;
+    // Prefer categories fetched from API
+    const id = Number(product.kategori_id || product.kategori || product.category_id || 0);
+    if (categories && categories.length && id) {
+      const c = categories.find((x) => Number(x.id) === id);
+      if (c) return c.nama || String(id);
+    }
 
+    const rawValue = product.kategori_name || product.kategori || product.category_name || product.category || product.kategori_id;
     if (typeof rawValue === "string" && rawValue.trim()) {
       const mapped = categoryLabelMap[Number(rawValue)] ?? rawValue;
       return mapped;
     }
 
-    const id = Number(product.kategori_id ?? product.kategori ?? 0);
-    return categoryLabelMap[id] || "Lainnya";
+    const fallbackId = Number(product.kategori_id ?? product.kategori ?? 0);
+    return categoryLabelMap[fallbackId] || "Lainnya";
   };
 
   // Ambil URL gambar produk — prioritas ke gambar_url yang sudah lengkap dari Laravel
@@ -122,7 +157,9 @@ function StokBarang() {
   };
 
   const safeProducts = Array.isArray(products) ? products : [];
-  const categoryOptions = Array.from(new Set(safeProducts.map((product) => getCategoryLabel(product))));
+  const categoryOptions = categories && categories.length
+    ? categories.map((c) => c.nama)
+    : Array.from(new Set(safeProducts.map((product) => getCategoryLabel(product))));
 
   const filteredProducts = safeProducts.filter((product) => {
     const query = searchTerm.toLowerCase();
