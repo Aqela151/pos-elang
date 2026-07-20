@@ -6,12 +6,12 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
+use App\Models\Cabang;
 
 class User extends Authenticatable
 {
     use HasApiTokens, HasFactory, Notifiable;
 
-    // Karena tabel users tidak memiliki created_at dan updated_at
     public $timestamps = false;
 
     protected $fillable = [
@@ -31,5 +31,11 @@ class User extends Authenticatable
         return [
             'password' => 'hashed',
         ];
+    }
+
+    // TAMBAHKAN INI
+    public function cabang()
+    {
+        return $this->belongsTo(Cabang::class);
     }
 }

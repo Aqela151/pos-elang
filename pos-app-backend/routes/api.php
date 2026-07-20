@@ -1,5 +1,6 @@
 <?php
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\UserController;
 use App\Http\Controllers\CabangController;
 use App\Http\Controllers\ProdukController;
 use App\Http\Controllers\MemberController;
@@ -9,6 +10,7 @@ use App\Http\Controllers\DetailTransaksiController;
 use App\Http\Controllers\KategoriController;
 use App\Http\Controllers\StokController;
 use App\Http\Controllers\SettingsController;
+
 
 use App\Http\Controllers\Api\LoginController;
 
@@ -29,6 +31,7 @@ Route::apiResource('cabang', CabangController::class);
 Route::apiResource('produk', ProdukController::class);
 Route::apiResource('member', MemberController::class);
 Route::apiResource('supplier', SupplierController::class);
+Route::apiResource('users', UserController::class);
 
 Route::get('/transaksi/histori', [TransaksiController::class, 'histori']);
 Route::apiResource('transaksi', TransaksiController::class);
