@@ -43,15 +43,71 @@ function Toggle({ checked, onChange }) {
   );
 }
 
-function ProfilToko({ profil, onChange, onSave, saving }) {
+function ProfilToko() {
+  // Komponen ini mandiri: melakukan GET /settings sendiri saat dibuka,
+  // dan PUT /settings sendiri saat tombol Simpan ditekan.
+  // Field mengikuti kolom tabel pengaturan_toko: nama_toko, telepon, email, kota, alamat, footer_struk.
+  const [form, setForm] = useState({
+    nama_toko: "",
+    telepon: "",
+    email: "",
+    kota: "",
+    alamat: "",
+    footer_struk: "",
+  });
   const [logo, setLogo] = useState(null);
   const inputRef = useRef(null);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    let mounted = true;
+
+    const loadProfil = async () => {
+      try {
+        const res = await api.get("/settings");
+        const data = res.data || {};
+        if (mounted && data.profil) {
+          setForm((prev) => ({ ...prev, ...data.profil }));
+        }
+      } catch (error) {
+        console.error("Gagal memuat profil toko:", error);
+        if (mounted) alert("Gagal memuat data profil toko.");
+      } finally {
+        if (mounted) setLoading(false);
+      }
+    };
+
+    loadProfil();
+    return () => { mounted = false; };
+  }, []);
+
+  const handleChange = (field, value) => {
+    setForm((prev) => ({ ...prev, [field]: value }));
+  };
+
+  const handleSave = async () => {
+    setSaving(true);
+    try {
+      await api.put("/settings", form);
+      alert("Profil toko berhasil disimpan.");
+    } catch (error) {
+      console.error("Gagal menyimpan profil toko:", error);
+      alert("Gagal menyimpan profil toko. Silakan coba lagi.");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  if (loading) {
+    return <div className="settings-section">Memuat profil toko...</div>;
+  }
 
   return (
     <div className="settings-section">
       <div className="settings-section-header">
         <span className="settings-section-title">Profil Toko</span>
-        <button className="settings-save-btn" onClick={onSave} disabled={saving}>
+        <button className="settings-save-btn" onClick={handleSave} disabled={saving}>
           <Check size={14} />{saving ? "Menyimpan..." : "Simpan"}
         </button>
       </div>
@@ -91,8 +147,8 @@ function ProfilToko({ profil, onChange, onSave, saving }) {
           <input
             className="settings-input"
             type="text"
-            value={profil.nama_toko}
-            onChange={(e) => onChange({ ...profil, nama_toko: e.target.value })}
+            value={form.nama_toko}
+            onChange={(e) => handleChange("nama_toko", e.target.value)}
           />
         </div>
         <div className="settings-form-group">
@@ -100,8 +156,8 @@ function ProfilToko({ profil, onChange, onSave, saving }) {
           <input
             className="settings-input"
             type="text"
-            value={profil.telepon}
-            onChange={(e) => onChange({ ...profil, telepon: e.target.value })}
+            value={form.telepon}
+            onChange={(e) => handleChange("telepon", e.target.value)}
           />
         </div>
         <div className="settings-form-group">
@@ -109,8 +165,8 @@ function ProfilToko({ profil, onChange, onSave, saving }) {
           <input
             className="settings-input"
             type="email"
-            value={profil.email}
-            onChange={(e) => onChange({ ...profil, email: e.target.value })}
+            value={form.email}
+            onChange={(e) => handleChange("email", e.target.value)}
           />
         </div>
         <div className="settings-form-group">
@@ -118,8 +174,8 @@ function ProfilToko({ profil, onChange, onSave, saving }) {
           <input
             className="settings-input"
             type="text"
-            value={profil.kota}
-            onChange={(e) => onChange({ ...profil, kota: e.target.value })}
+            value={form.kota}
+            onChange={(e) => handleChange("kota", e.target.value)}
           />
         </div>
       </div>
@@ -128,8 +184,8 @@ function ProfilToko({ profil, onChange, onSave, saving }) {
         <input
           className="settings-input"
           type="text"
-          value={profil.alamat}
-          onChange={(e) => onChange({ ...profil, alamat: e.target.value })}
+          value={form.alamat}
+          onChange={(e) => handleChange("alamat", e.target.value)}
         />
       </div>
       <div className="settings-form-group">
@@ -137,8 +193,8 @@ function ProfilToko({ profil, onChange, onSave, saving }) {
         <input
           className="settings-input"
           type="text"
-          value={profil.footer_struk}
-          onChange={(e) => onChange({ ...profil, footer_struk: e.target.value })}
+          value={form.footer_struk}
+          onChange={(e) => handleChange("footer_struk", e.target.value)}
         />
       </div>
     </div>
@@ -245,11 +301,54 @@ function AkunSaya({ user, akun, onChange, onSave, saving }) {
 }
 
 function Pengguna() {
-  const [users] = useState([
-    { id: 1, initials: "AB", name: "Alex Bizher", role: "Admin", cabang: "Semua", deletable: false },
-    { id: 2, initials: "AN", name: "Aqela Nisa", role: "Kasir", cabang: "Blimbing", deletable: true },
-    { id: 3, initials: "SR", name: "Sri Rahayu", role: "Kasir", cabang: "Kepanjen", deletable: true },
-  ]);
+  const [users, setUsers] = useState([]);
+
+  // Fallback ini HANYA dipakai jika request API gagal (backend error/down),
+  // bukan dipakai lagi kalau request berhasil meskipun hasilnya array kosong.
+  const defaultUsers = [
+    { id: 1, initials: "AB", name: "Alex Bizher", role: "Admin", cabangNama: "Semua", deletable: false },
+    { id: 2, initials: "AN", name: "Aqela Nisa", role: "Kasir", cabangNama: "Blimbing", deletable: true },
+    { id: 3, initials: "SR", name: "Sri Rahayu", role: "Kasir", cabangNama: "Kepanjen", deletable: true },
+  ];
+
+  useEffect(() => {
+    let mounted = true;
+
+    (async () => {
+      try {
+        const res = await api.get("/users");
+        if (!mounted) return;
+        const list = res.data || [];
+
+        // Normalisasi mengikuti response API terbaru:
+        // { id, cabang_id, nama, email, role, cabang: { id, nama, alamat, telepon } }
+        const normalized = Array.isArray(list)
+          ? list.map((u) => {
+              const namaUser = u.nama || u.email || "";
+              const namaCabang = u.cabang?.nama || "";
+              return {
+                id: u.id,
+                initials: namaUser.slice(0, 2).toUpperCase(),
+                name: namaUser,
+                email: u.email || "",
+                role: u.role || "",
+                cabangNama: namaCabang,
+                deletable: u.id !== 1,
+              };
+            })
+          : [];
+
+        // Request berhasil -> pakai hasil dari API apa adanya (boleh kosong),
+        // tidak jatuh balik ke defaultUsers lagi.
+        setUsers(normalized);
+      } catch (err) {
+        console.error("Gagal memuat daftar pengguna:", err);
+        if (mounted) setUsers(defaultUsers);
+      }
+    })();
+
+    return () => { mounted = false; };
+  }, []);
 
   return (
     <div className="settings-section">
@@ -275,12 +374,12 @@ function Pengguna() {
                     <div className="pengguna-avatar">{u.initials}</div>
                     <div className="pengguna-name-group">
                       <span className="pengguna-name">{u.name}</span>
-                      <span className="pengguna-cabang-sub">{u.cabang}</span>
+                      <span className="pengguna-cabang-sub">{u.cabangNama}</span>
                     </div>
                   </div>
                 </td>
-                <td><span className={`pengguna-badge ${u.role === "Admin" ? "admin" : "kasir"}`}>{u.role}</span></td>
-                <td className="col-hide-mobile">{u.cabang}</td>
+                <td><span className={`pengguna-badge ${u.role?.toLowerCase() === "admin" ? "admin" : "kasir"}`}>{u.role}</span></td>
+                <td className="col-hide-mobile">{u.cabangNama}</td>
                 <td>
                   <div className="pengguna-actions">
                     <button className="pengguna-action-btn" aria-label="Edit"><Pencil size={12} /></button>
@@ -402,6 +501,21 @@ export default function Settings() {
         email: settings.akun.email,
       });
 
+      // Coba simpan juga ke tabel users lewat endpoint users (jika ada).
+      // Ini non-blocking: kalau endpoint tidak ada, kita tetap lanjut tanpa crash.
+      (async () => {
+        try {
+          if (user?.id) {
+            await api.put(`/users/${user.id}`, {
+              name: settings.akun.nama_lengkap,
+              email: settings.akun.email,
+            });
+          }
+        } catch (e) {
+          // ignore if users endpoint not present
+        }
+      })();
+
       alert("Settings berhasil disimpan.");
     } catch (error) {
       console.error("Gagal menyimpan settings ke backend:", error);
@@ -414,6 +528,17 @@ export default function Settings() {
             name: settings.akun.nama_lengkap,
             email: settings.akun.email,
           });
+
+          (async () => {
+            try {
+              if (user?.id) {
+                await api.put(`/users/${user.id}`, {
+                  name: settings.akun.nama_lengkap,
+                  email: settings.akun.email,
+                });
+              }
+            } catch (e) {}
+          })();
           alert("Settings berhasil disimpan.");
         } catch (err2) {
           console.error("Gagal menyimpan settings (fallback POST):", err2);
@@ -438,7 +563,7 @@ export default function Settings() {
   const renderContent = () => {
     switch (activeTab) {
       case "profil":
-        return <ProfilToko profil={settings.profil} onChange={(value) => setSettings({ ...settings, profil: value })} onSave={handleSave} saving={saving} />;
+        return <ProfilToko />;
       case "pajak":
         return <Pajak pajak={settings.pajak} onChange={(value) => setSettings({ ...settings, pajak: value })} onSave={handleSave} saving={saving} />;
       case "akun":

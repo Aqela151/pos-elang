@@ -4,6 +4,7 @@ import akiImg from "../assets/images/image1.png";
 import "./Kasir.css";
 import api from "../services/api";
 import { useAuth } from "../context/AuthContext";
+import { useSettings } from "../context/SettingsContext";
 
 const fmt = (n) => "Rp " + (n || 0).toLocaleString("id-ID");
 
@@ -193,8 +194,46 @@ function Kasir() {
 
   const totalItems = keranjang.reduce((s, k) => s + k.qty, 0);
   const subtotal = keranjang.reduce((s, k) => s + Number(k.harga_eceran) * k.qty, 0);
-  const tax = Math.round(subtotal * 0.03);
-  const total = subtotal + tax;
+  const { settings } = useSettings();
+  const pajakList = settings?.pajak ?? [];
+
+  // ── PPN ──
+  const ppnItem = pajakList.find((i) => (i?.label || "").toString().toLowerCase().includes("ppn")) || pajakList.find((i) => i.id === 1) || null;
+  const taxPercent = ppnItem && ppnItem.enabled ? Number(ppnItem.value) || 0 : 0;
+
+  // ── Diskon Member (Silver / Gold / Platinum) ──
+  const silverItem = pajakList.find(
+    (i) => (i?.label || "").toLowerCase().includes("silver")
+  );
+
+  const goldItem = pajakList.find(
+    (i) => (i?.label || "").toLowerCase().includes("gold")
+  );
+
+  const platinumItem = pajakList.find(
+    (i) => (i?.label || "").toLowerCase().includes("platinum")
+  );
+
+  const memberLevel = (selectedMember?.level || "").toLowerCase();
+  let discountItem = null;
+  if (memberLevel === "silver") {
+    discountItem = silverItem;
+  } else if (memberLevel === "gold") {
+    discountItem = goldItem;
+  } else if (memberLevel === "platinum") {
+    discountItem = platinumItem;
+  }
+  // Tidak ada member dipilih (Umum) -> discountItem tetap null -> diskon 0
+
+  const discountPercent =
+    discountItem && discountItem.enabled ? Number(discountItem.value) || 0 : 0;
+  const discount = Math.round(subtotal * (discountPercent / 100));
+
+  // ── Urutan: Subtotal -> Diskon Member -> Subtotal setelah diskon -> PPN -> Total ──
+  const subtotalAfterDiscount = subtotal - discount;
+  const tax = Math.round(subtotalAfterDiscount * (taxPercent / 100));
+  const total = subtotalAfterDiscount + tax;
+
   const bayarNum = parseInt(bayar.replace(/\D/g, "")) || 0;
   const kembali = Math.max(0, bayarNum - total);
 
@@ -228,6 +267,9 @@ function Kasir() {
       })
       .join("");
 
+    const storeName = settings?.profil?.nama_toko || "Nama Toko";
+    const footerStruk = settings?.profil?.footer_struk || "";
+
     const html = `
       <html>
         <head>
@@ -243,7 +285,7 @@ function Kasir() {
           </style>
         </head>
         <body>
-          <h2>Nama Toko</h2>
+          <h2>${storeName}</h2>
           <div>Nomor: ${tx.kode_transaksi || trxCode}</div>
           <div>Tanggal: ${date}</div>
           <div>Member: ${selectedMember?.nama || "Umum"}</div>
@@ -263,11 +305,15 @@ function Kasir() {
             </table>
           </div>
           <div class="section">
+            <div>Subtotal: Rp ${Number(tx.subtotal ?? subtotal).toLocaleString("id-ID")}</div>
+            <div>Diskon: Rp ${Number(tx.diskon ?? discount).toLocaleString("id-ID")}</div>
+            <div>Pajak: Rp ${Number(tx.pajak ?? tax).toLocaleString("id-ID")}</div>
             <div>Total: Rp ${Number(tx.total).toLocaleString("id-ID")}</div>
             <div>Bayar: Rp ${Number(tx.bayar).toLocaleString("id-ID")}</div>
             <div>Kembali: Rp ${Number(tx.kembali).toLocaleString("id-ID")}</div>
           </div>
           <div>Terima kasih.</div>
+          <div>${footerStruk}</div>
         </body>
       </html>`;
 
@@ -294,6 +340,11 @@ function Kasir() {
         cabang_id: user?.cabang_id,
         kasir_id: user?.id,
         member_id: selectedMember?.id || null,
+        subtotal: subtotal,
+        diskon: discount,
+        diskon_persen: discountPercent,
+        pajak: tax,
+        pajak_persen: taxPercent,
         total: total,
         metode_bayar: metodeBayar,
         bayar: bayarNum,
@@ -316,6 +367,9 @@ function Kasir() {
       const tx = {
         kode_transaksi: kodeTransaksi,
         tanggal,
+        subtotal,
+        diskon: discount,
+        pajak: tax,
         total,
         bayar: bayarNum,
         kembali,
@@ -553,7 +607,11 @@ function Kasir() {
           <div className="kasir-rincian">
             <div className="kasir-rincian-row"><span>Amount</span><span>{totalItems} Items</span></div>
             <div className="kasir-rincian-row"><span>Subtotal</span><span>{fmt(subtotal)}</span></div>
-            <div className="kasir-rincian-row"><span>Tax (3%)</span><span>{fmt(tax)}</span></div>
+            <div className="kasir-rincian-row">
+              <span>Diskon{discountItem ? ` (${discountItem.label} ${discountPercent}%)` : ""}</span>
+              <span>{discount > 0 ? "- " + fmt(discount) : fmt(0)}</span>
+            </div>
+            <div className="kasir-rincian-row"><span>Tax ({taxPercent}%)</span><span>{fmt(tax)}</span></div>
             <div className="kasir-rincian-row total"><span>Total</span><span className="kasir-total-val">{fmt(total)}</span></div>
             <div className="kasir-rincian-row"><span>Bayar</span><span>{fmt(bayarNum)}</span></div>
             <div className="kasir-rincian-row"><span>Kembali</span><span>{kembali >= 0 ? fmt(kembali) : "-"}</span></div>

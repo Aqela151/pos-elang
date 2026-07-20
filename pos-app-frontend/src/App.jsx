@@ -1,6 +1,7 @@
 import { useEffect } from "react";
 import { Routes, Route, Navigate, useNavigate } from "react-router-dom";
 import { AuthProvider, useAuth } from "./context/AuthContext";
+import { SettingsProvider } from "./context/SettingsContext";
 import ProtectedRoute, { PublicRoute } from "./components/ProtectedRoute";
 import AppLayout from "./components/AppLayout";
 
@@ -41,7 +42,8 @@ function LogoutRedirect() {
 function App() {
   return (
     <AuthProvider>
-      <Routes>
+      <SettingsProvider>
+        <Routes>
         <Route path="/" element={<RootRedirect />} />
 
         <Route
@@ -122,7 +124,8 @@ function App() {
         />
 
         <Route path="*" element={<Navigate to="/" replace />} />
-      </Routes>
+        </Routes>
+      </SettingsProvider>
     </AuthProvider>
   );
 }

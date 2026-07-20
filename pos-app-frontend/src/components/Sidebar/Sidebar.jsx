@@ -3,6 +3,7 @@ import { NavLink } from "react-router-dom";
 import "./Sidebar.css";
 import { PanelLeft, MoreVertical } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
+import { useSettings } from "../../context/SettingsContext";
 import SidebarItem from "../SidebarItem/SidebarItem";
 import dashboardIcon from "../../assets/icons/dashboard.png";
 import keranjangIcon from "../../assets/icons/keranjang.png";
@@ -14,6 +15,7 @@ import logoutIcon    from "../../assets/icons/logout.png";
 
 function Sidebar({ isOpen, onClose, collapsed, onToggleCollapse }) {
   const { user } = useAuth();
+  const { settings } = useSettings();
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef(null);
 
@@ -54,7 +56,7 @@ function Sidebar({ isOpen, onClose, collapsed, onToggleCollapse }) {
     <aside className={`sidebar ${isOpen ? "open" : ""} ${collapsed ? "collapsed" : ""}`}>
 
       <div className="sidebar-logo-bar">
-        {!collapsed && <span className="sidebar-logo-name">POS ElangAnugerah</span>}
+        {!collapsed && <span className="sidebar-logo-name">{settings?.profil?.nama_toko || "POS ElangAnugerah"}</span>}
         <button className="sidebar-logo-btn" aria-label="Toggle" onClick={onToggleCollapse}>
           <PanelLeft size={14} strokeWidth={2} />
         </button>
