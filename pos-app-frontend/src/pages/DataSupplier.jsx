@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import api from "../services/api";
+import { useAuth } from "../context/AuthContext";
 import { Pencil, Trash2, Search, ChevronDown, Plus } from "lucide-react";
 import Card from "../components/Card/Card";
 import TambahSupplierModal from "../components/TambahSupplierModal/TambahSupplierModal";
@@ -8,6 +9,8 @@ import DeleteSupplierModal from "../components/DeleteSupplierModal/DeleteSupplie
 import "./DataSupplier.css";
 
 function DataSupplier() {
+  const { user } = useAuth();
+  const isAdmin = user?.role === "admin";
   const [suppliers, setSuppliers] = useState([]);
   const [tambahOpen, setTambahOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
@@ -29,11 +32,13 @@ const getSupplier = async () => {
 };
 
   const handleEdit = (supplier) => {
+    if (!isAdmin) return;
     setSelectedSupplier(supplier);
     setEditOpen(true);
   };
 
   const handleDelete = (supplier) => {
+    if (!isAdmin) return;
     setSelectedSupplier(supplier);
     setDeleteOpen(true);
   };
@@ -94,10 +99,12 @@ const getSupplier = async () => {
         <div className="filter-select">
           Terbaru <ChevronDown size={14} />
         </div>
-        <button className="add-btn" onClick={() => setTambahOpen(true)}>
-          <Plus size={16} />
-          Tambah Supplier
-        </button>
+        {isAdmin && (
+          <button className="add-btn" onClick={() => setTambahOpen(true)}>
+            <Plus size={16} />
+            Tambah Supplier
+          </button>
+        )}
       </div>
 
       <div className="member-table-card">
@@ -126,10 +133,14 @@ const getSupplier = async () => {
       <td>{s.alamat}</td>
 
       <td>
-        <div className="aksi-btns">
-          <Pencil size={16} onClick={() => handleEdit(s)} />
-          <Trash2 size={16} onClick={() => handleDelete(s)} />
-        </div>
+        {isAdmin ? (
+          <div className="aksi-btns">
+            <Pencil size={16} onClick={() => handleEdit(s)} />
+            <Trash2 size={16} onClick={() => handleDelete(s)} />
+          </div>
+        ) : (
+          <span>-</span>
+        )}
       </td>
     </tr>
   ))}

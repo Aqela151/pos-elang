@@ -23,17 +23,13 @@ function Sidebar({ isOpen, onClose, collapsed, onToggleCollapse }) {
   const displayRole = user?.role === "kasir" ? "Kasir" : user?.role === "admin" ? "Admin" : "Pengguna";
   const avatarInitial = displayName?.trim()?.[0]?.toUpperCase() || "P";
 
-  const menuItems = user?.role === "kasir"
-    ? [
-        { text: "Kasir", icon: keranjangIcon, to: "/kasir" },
-      ]
-    : [
-        { text: "Dashboard", icon: dashboardIcon, to: "/dashboard" },
-        { text: "Kasir", icon: keranjangIcon, to: "/kasir" },
-        { text: "Stok Barang", icon: barangIcon, to: "/stok-barang" },
-        { text: "Data Member", icon: memberIcon, to: "/data-member" },
-        { text: "Laporan", icon: laporanIcon, to: "/laporan" },
-      ];
+  const menuItems = [
+    { text: "Dashboard", icon: dashboardIcon, to: "/dashboard" },
+    { text: "Kasir", icon: keranjangIcon, to: "/kasir" },
+    { text: "Stok Barang", icon: barangIcon, to: "/stok-barang" },
+    { text: "Data Member", icon: memberIcon, to: "/data-member" },
+    { text: "Laporan", icon: laporanIcon, to: "/laporan" },
+  ];
 
   // tutup dropdown kalau klik di luar area profile
   useEffect(() => {

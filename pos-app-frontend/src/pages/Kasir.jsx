@@ -8,7 +8,7 @@ import { useSettings } from "../context/SettingsContext";
 
 const fmt = (n) => "Rp " + (n || 0).toLocaleString("id-ID");
 
-const categoryLabelMap = {
+const fallbackCategoryLabelMap = {
   1: "Aki Kering",
   2: "Aki Basah",
   3: "Aki Motor",
@@ -100,6 +100,7 @@ function Kasir() {
   const [metodeBayar, setMetodeBayar] = useState("tunai");
   const [bayar, setBayar] = useState("");
   const [produkList, setProdukList] = useState([]);
+  const [categories, setCategories] = useState([]);
   const [members, setMembers] = useState([]);
   const [selectedMember, setSelectedMember] = useState(null);
   const [trxCode, setTrxCode] = useState("TRX-000000");
@@ -110,13 +111,21 @@ function Kasir() {
     if (!cabangId) return;
     getProduk();
     getMembers();
+    fetchCategories();
   }, [cabangId]);
 
   const getProduk = async () => {
     try {
       const res = await api.get("/produk", { params: { cabang_id: cabangId } });
       console.log("[Kasir] produk response:", res.data);
-      setProdukList(res.data);
+      const data = res.data;
+      const normalized = Array.isArray(data)
+        ? data
+        : Array.isArray(data?.data)
+        ? data.data
+        : [];
+      console.log("[DEBUG] Jumlah produk dari API:", normalized.length);
+      setProdukList(normalized);
     } catch (err) {
       console.log(err);
     }
@@ -131,28 +140,83 @@ function Kasir() {
     }
   };
 
+  const fetchCategories = async () => {
+    try {
+      const endpoints = ["/kategori", "/kategori-produk", "/categories", "/category"];
+      for (const ep of endpoints) {
+        try {
+          const res = await api.get(ep);
+          const data = res.data;
+          const list = Array.isArray(data) ? data : Array.isArray(data?.data) ? data.data : [];
+          if (list && list.length) {
+            const normalized = list.map((c) => ({
+              id: c.id ?? c.kategori_id ?? c.category_id,
+              nama: c.nama || c.name || c.nama_kategori || c.category_name || c.label,
+            }));
+            setCategories(normalized);
+            return;
+          }
+        } catch (e) {
+          // ignore and try next endpoint
+        }
+      }
+    } catch (err) {
+      console.error("[Kasir] Gagal memuat kategori:", err);
+    }
+  };
+
   const getKasirCategoryLabel = (p) => {
-    return categoryLabelMap[p.kategori_id] || p.kategori_name || p.kategori || p.category_name || p.category || "Lainnya";
+    const rawId = p.kategori_id ?? p.kategori ?? p.category_id ?? p.category ?? 0;
+    const found = categories.find((c) => String(c.id) === String(rawId));
+    if (found) return found.nama;
+    return fallbackCategoryLabelMap[Number(rawId)] || p.kategori_name || p.kategori || p.category_name || p.category || "Lainnya";
   };
 
+  const getCategoryId = (p) => {
+    return String(p.kategori_id ?? p.kategori ?? p.category_id ?? p.category ?? "");
+  };
+
+  // ─────────────────────────────────────────────────────────────
+  // FIX: isJasaItem & isProdukItem
+  // Sebelumnya ada fallback "id > 4" / "id >= 1 && id <= 4" yang
+  // hardcode dan tidak sinkron dengan data kategori asli dari
+  // backend. Akibatnya produk dengan kategori_id di luar 1-4 bisa
+  // salah diklasifikasikan sebagai "Jasa" walau namanya bukan jasa,
+  // sehingga hilang dari tab "Produk" meski API mengembalikannya.
+  //
+  // Sekarang klasifikasi murni berdasarkan NAMA kategori (dari
+  // fetchCategories(), sumbernya tetap backend), tanpa tebak angka.
+  // ─────────────────────────────────────────────────────────────
   const isJasaItem = (p) => {
-    const raw = `${p.kategori_name || p.kategori || p.category_name || p.category || p.kategori_id || ""}`.toLowerCase();
-    if (raw.includes("jasa") || raw.includes("service") || raw.includes("servis")) return true;
-    const id = Number(p.kategori_id ?? p.kategori ?? 0);
-    return id > 4;
+    const found = categories.find((c) => String(c.id) === getCategoryId(p));
+    const categoryName =
+      found?.nama ||
+      `${p.kategori_name || p.kategori || p.category_name || p.category || ""}`;
+    const raw = String(categoryName).toLowerCase();
+    return raw.includes("jasa") || raw.includes("service") || raw.includes("servis");
   };
 
-  const isProdukItem = (p) => {
-    const id = Number(p.kategori_id ?? p.kategori ?? 0);
-    if (id >= 1 && id <= 4) return true;
-    return !isJasaItem(p);
-  };
+  const isProdukItem = (p) => !isJasaItem(p);
 
   const filtered = produkList.filter((p) => {
     const matchesSearch = (p.nama_produk || "").toLowerCase().includes(search.toLowerCase());
     const matchesCategory = kategori === "Produk" ? isProdukItem(p) : isJasaItem(p);
     return matchesSearch && matchesCategory;
   });
+
+  useEffect(() => {
+    console.log("[DEBUG] produkList length:", produkList.length);
+  }, [produkList]);
+
+  useEffect(() => {
+    console.log(
+      "[DEBUG] filtered length:",
+      filtered.length,
+      "| tab aktif:",
+      kategori,
+      filtered
+    );
+  }, [filtered, kategori]);
 
   const addToCart = (produk) => {
     setKeranjang(prev => {
@@ -473,7 +537,7 @@ function Kasir() {
                 />
               </div>
               <div className="kasir-prod-name">{p.nama_produk}</div>
-              <div className="kasir-prod-sub">{categoryLabelMap[p.kategori_id]}</div>
+              <div className="kasir-prod-sub">{getKasirCategoryLabel(p)}</div>
               <div className="kasir-prod-harga">
                 <span className="kasir-tag eceran">Eceran</span>
                 <span className="kasir-price-eceran">{fmt(Number(p.harga_eceran))}</span>
@@ -568,7 +632,7 @@ function Kasir() {
               </div>
               <div className="kasir-item-body">
                 <div className="kasir-item-name">{k.nama_produk}</div>
-                <div className="kasir-item-sub">{categoryLabelMap[k.kategori_id]}</div>
+                <div className="kasir-item-sub">{getKasirCategoryLabel(k)}</div>
                 <div className="kasir-item-row">
                   <span className="kasir-item-price">{k.qty} × {fmt(Number(k.harga_eceran))}</span>
                   <div className="kasir-item-qty">

@@ -43,7 +43,7 @@ function Toggle({ checked, onChange }) {
   );
 }
 
-function ProfilToko() {
+function ProfilToko({ isAdmin = true }) {
   // Komponen ini mandiri: melakukan GET /settings sendiri saat dibuka,
   // dan PUT /settings sendiri saat tombol Simpan ditekan.
   // Field mengikuti kolom tabel pengaturan_toko: nama_toko, telepon, email, kota, alamat, footer_struk.
@@ -83,10 +83,12 @@ function ProfilToko() {
   }, []);
 
   const handleChange = (field, value) => {
+    if (!isAdmin) return;
     setForm((prev) => ({ ...prev, [field]: value }));
   };
 
   const handleSave = async () => {
+    if (!isAdmin) return;
     setSaving(true);
     try {
       await api.put("/settings", form);
@@ -107,7 +109,7 @@ function ProfilToko() {
     <div className="settings-section">
       <div className="settings-section-header">
         <span className="settings-section-title">Profil Toko</span>
-        <button className="settings-save-btn" onClick={handleSave} disabled={saving}>
+        <button className="settings-save-btn" onClick={handleSave} disabled={saving || !isAdmin}>
           <Check size={14} />{saving ? "Menyimpan..." : "Simpan"}
         </button>
       </div>
@@ -149,6 +151,7 @@ function ProfilToko() {
             type="text"
             value={form.nama_toko}
             onChange={(e) => handleChange("nama_toko", e.target.value)}
+            readOnly={!isAdmin}
           />
         </div>
         <div className="settings-form-group">
@@ -158,6 +161,7 @@ function ProfilToko() {
             type="text"
             value={form.telepon}
             onChange={(e) => handleChange("telepon", e.target.value)}
+            readOnly={!isAdmin}
           />
         </div>
         <div className="settings-form-group">
@@ -167,6 +171,7 @@ function ProfilToko() {
             type="email"
             value={form.email}
             onChange={(e) => handleChange("email", e.target.value)}
+            readOnly={!isAdmin}
           />
         </div>
         <div className="settings-form-group">
@@ -176,6 +181,7 @@ function ProfilToko() {
             type="text"
             value={form.kota}
             onChange={(e) => handleChange("kota", e.target.value)}
+            readOnly={!isAdmin}
           />
         </div>
       </div>
@@ -186,6 +192,7 @@ function ProfilToko() {
           type="text"
           value={form.alamat}
           onChange={(e) => handleChange("alamat", e.target.value)}
+          readOnly={!isAdmin}
         />
       </div>
       <div className="settings-form-group">
@@ -195,21 +202,28 @@ function ProfilToko() {
           type="text"
           value={form.footer_struk}
           onChange={(e) => handleChange("footer_struk", e.target.value)}
+          readOnly={!isAdmin}
         />
       </div>
     </div>
   );
 }
 
-function Pajak({ pajak, onChange, onSave, saving }) {
-  const toggle = (id) => onChange(pajak.map((item) => (item.id === id ? { ...item, enabled: !item.enabled } : item)));
-  const setValue = (id, value) => onChange(pajak.map((item) => (item.id === id ? { ...item, value } : item)));
+function Pajak({ pajak, onChange, onSave, saving, isAdmin = true }) {
+  const toggle = (id) => {
+    if (!isAdmin) return;
+    onChange(pajak.map((item) => (item.id === id ? { ...item, enabled: !item.enabled } : item)));
+  };
+  const setValue = (id, value) => {
+    if (!isAdmin) return;
+    onChange(pajak.map((item) => (item.id === id ? { ...item, value } : item)));
+  };
 
   return (
     <div className="settings-section">
       <div className="settings-section-header">
         <span className="settings-section-title">Pajak & Diskon</span>
-        <button className="settings-save-btn" onClick={onSave} disabled={saving}>
+        <button className="settings-save-btn" onClick={onSave} disabled={saving || !isAdmin}>
           <Check size={14} />{saving ? "Menyimpan..." : "Simpan"}
         </button>
       </div>
@@ -227,6 +241,7 @@ function Pajak({ pajak, onChange, onSave, saving }) {
                   type="number"
                   value={item.value ?? ""}
                   onChange={(e) => setValue(item.id, Number(e.target.value))}
+                  readOnly={!isAdmin}
                 />
                 <span className="settings-percent-sign">%</span>
               </>
@@ -239,7 +254,7 @@ function Pajak({ pajak, onChange, onSave, saving }) {
   );
 }
 
-function AkunSaya({ user, akun, onChange, onSave, saving }) {
+function AkunSaya({ user, akun, onChange, onSave, saving, isAdmin = true }) {
   const [photo, setPhoto] = useState(null);
   const inputRef = useRef(null);
   // Prioritaskan nama dari form (akun.nama_lengkap) yang sudah tersinkron dengan
@@ -251,7 +266,7 @@ function AkunSaya({ user, akun, onChange, onSave, saving }) {
     <div className="settings-section">
       <div className="settings-section-header">
         <span className="settings-section-title">Akun Saya</span>
-        <button className="settings-save-btn" onClick={onSave} disabled={saving}>
+        <button className="settings-save-btn" onClick={onSave} disabled={saving || !isAdmin}>
           <Check size={14} />{saving ? "Menyimpan..." : "Simpan"}
         </button>
       </div>
@@ -262,7 +277,7 @@ function AkunSaya({ user, akun, onChange, onSave, saving }) {
         <div className="akun-info">
           <span className="akun-name">{displayName}</span>
           <span className="akun-role">{displayRole}</span>
-          <button className="akun-ganti-foto-btn" onClick={() => inputRef.current.click()}>
+          <button className="akun-ganti-foto-btn" onClick={() => inputRef.current.click()} disabled={!isAdmin}>
             <Camera size={13} /> Ganti Foto
           </button>
           {/* TODO: sama seperti logo toko, foto profil belum tersambung ke backend */}
@@ -285,6 +300,7 @@ function AkunSaya({ user, akun, onChange, onSave, saving }) {
           type="text"
           value={akun.nama_lengkap}
           onChange={(e) => onChange({ ...akun, nama_lengkap: e.target.value })}
+          readOnly={!isAdmin}
         />
       </div>
       <div className="settings-form-group">
@@ -294,13 +310,14 @@ function AkunSaya({ user, akun, onChange, onSave, saving }) {
           type="email"
           value={akun.email}
           onChange={(e) => onChange({ ...akun, email: e.target.value })}
+          readOnly={!isAdmin}
         />
       </div>
     </div>
   );
 }
 
-function Pengguna() {
+function Pengguna({ isAdmin = true }) {
   const [users, setUsers] = useState([]);
 
   // Fallback ini HANYA dipakai jika request API gagal (backend error/down),
@@ -354,7 +371,7 @@ function Pengguna() {
     <div className="settings-section">
       <div className="settings-section-header">
         <span className="settings-section-title">Pengguna</span>
-        <button className="settings-save-btn"><Plus size={14} />Tambah</button>
+        {isAdmin && <button className="settings-save-btn"><Plus size={14} />Tambah</button>}
       </div>
       <div className="pengguna-table-wrap">
         <table className="pengguna-table">
@@ -382,8 +399,8 @@ function Pengguna() {
                 <td className="col-hide-mobile">{u.cabangNama}</td>
                 <td>
                   <div className="pengguna-actions">
-                    <button className="pengguna-action-btn" aria-label="Edit"><Pencil size={12} /></button>
-                    {u.deletable && <button className="pengguna-action-btn delete" aria-label="Hapus"><Trash2 size={12} /></button>}
+                    {isAdmin && <button className="pengguna-action-btn" aria-label="Edit"><Pencil size={12} /></button>}
+                    {isAdmin && u.deletable && <button className="pengguna-action-btn delete" aria-label="Hapus"><Trash2 size={12} /></button>}
                   </div>
                 </td>
               </tr>
@@ -395,14 +412,17 @@ function Pengguna() {
   );
 }
 
-function Notifikasi({ notifikasi, onChange, onSave, saving }) {
-  const toggle = (id) => onChange(notifikasi.map((item) => (item.id === id ? { ...item, enabled: !item.enabled } : item)));
+function Notifikasi({ notifikasi, onChange, onSave, saving, isAdmin = true }) {
+  const toggle = (id) => {
+    if (!isAdmin) return;
+    onChange(notifikasi.map((item) => (item.id === id ? { ...item, enabled: !item.enabled } : item)));
+  };
 
   return (
     <div className="settings-section">
       <div className="settings-section-header">
         <span className="settings-section-title">Notifikasi</span>
-        <button className="settings-save-btn" onClick={onSave} disabled={saving}>
+        <button className="settings-save-btn" onClick={onSave} disabled={saving || !isAdmin}>
           <Check size={14} />{saving ? "Menyimpan..." : "Simpan"}
         </button>
       </div>
@@ -563,15 +583,15 @@ export default function Settings() {
   const renderContent = () => {
     switch (activeTab) {
       case "profil":
-        return <ProfilToko />;
+        return <ProfilToko isAdmin={!isKasir} />;
       case "pajak":
-        return <Pajak pajak={settings.pajak} onChange={(value) => setSettings({ ...settings, pajak: value })} onSave={handleSave} saving={saving} />;
+        return <Pajak pajak={settings.pajak} onChange={(value) => setSettings({ ...settings, pajak: value })} onSave={handleSave} saving={saving} isAdmin={!isKasir} />;
       case "akun":
-        return <AkunSaya user={user} akun={settings.akun} onChange={(value) => setSettings({ ...settings, akun: value })} onSave={handleSave} saving={saving} />;
+        return <AkunSaya user={user} akun={settings.akun} onChange={(value) => setSettings({ ...settings, akun: value })} onSave={handleSave} saving={saving} isAdmin={!isKasir} />;
       case "pengguna":
-        return <Pengguna />;
+        return <Pengguna isAdmin={!isKasir} />;
       case "notifikasi":
-        return <Notifikasi notifikasi={settings.notifikasi} onChange={(value) => setSettings({ ...settings, notifikasi: value })} onSave={handleSave} saving={saving} />;
+        return <Notifikasi notifikasi={settings.notifikasi} onChange={(value) => setSettings({ ...settings, notifikasi: value })} onSave={handleSave} saving={saving} isAdmin={!isKasir} />;
       default:
         return null;
     }

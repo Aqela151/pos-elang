@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { Pencil, Trash2, Search, Plus, MapPin } from "lucide-react";
+import { useAuth } from "../context/AuthContext";
 import Card from "../components/Card/Card";
 import TambahCabangModal from "../components/TambahCabangModal/TambahCabangModal";
 import EditCabangModal from "../components/EditCabangModal/EditCabangModal";
@@ -8,6 +9,8 @@ import "./DataCabang.css";
 import api from "../services/api";
 
 function DataCabang() {
+  const { user } = useAuth();
+  const isAdmin = user?.role === "admin";
   const [cabangList, setCabangList] = useState([]);
   const [loading, setLoading] = useState(false);
 
@@ -45,15 +48,18 @@ function DataCabang() {
   };
 
   const handleAdd = () => {
+    if (!isAdmin) return;
     setTambahOpen(true);
   };
 
   const handleEdit = (cabang) => {
+    if (!isAdmin) return;
     setSelectedCabang(cabang);
     setEditOpen(true);
   };
 
   const handleDelete = (cabang) => {
+    if (!isAdmin) return;
     setSelectedCabang(cabang);
     setDeleteOpen(true);
   };
@@ -111,10 +117,12 @@ function DataCabang() {
           <option value="newest">Terbaru</option>
           <option value="oldest">Terlama</option>
         </select>
-        <button className="add-btn" onClick={handleAdd}>
-          <Plus size={16} />
-          Tambah Cabang
-        </button>
+        {isAdmin && (
+          <button className="add-btn" onClick={handleAdd}>
+            <Plus size={16} />
+            Tambah Cabang
+          </button>
+        )}
       </div>
 
       <div className="cabang-table-card">
@@ -152,10 +160,14 @@ function DataCabang() {
                   <td>{c.alamat || "-"}</td>
                   <td>{c.telepon || "-"}</td>
                   <td>
-                    <div className="aksi-btns">
-                      <Pencil size={16} onClick={() => handleEdit(c)} />
-                      <Trash2 size={16} onClick={() => handleDelete(c)} />
-                    </div>
+                    {isAdmin ? (
+                      <div className="aksi-btns">
+                        <Pencil size={16} onClick={() => handleEdit(c)} />
+                        <Trash2 size={16} onClick={() => handleDelete(c)} />
+                      </div>
+                    ) : (
+                      <span>-</span>
+                    )}
                   </td>
                 </tr>
               ))

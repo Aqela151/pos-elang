@@ -4,7 +4,7 @@ import { Check, CloudUpload } from "lucide-react";
 import api from "../../services/api";
 import { useAuth } from "../../context/AuthContext";
 
-export default function EditBarangModal({ isOpen, onClose, barang, onSave, onSuccess }) {
+export default function EditBarangModal({ isOpen, onClose, barang, categories = [], onSave, onSuccess }) {
   const { user } = useAuth();
   const [imageFile, setImageFile] = useState(null);
   const [form, setForm] = useState({
@@ -19,6 +19,15 @@ export default function EditBarangModal({ isOpen, onClose, barang, onSave, onSuc
     status: "",
     sub: "",
   });
+
+  const categoryOptions = categories && categories.length
+    ? categories
+    : [
+        { id: "1", nama: "Aki Kering" },
+        { id: "2", nama: "Aki Basah" },
+        { id: "3", nama: "Aki Motor" },
+        { id: "4", nama: "Kabel Aksesoris" },
+      ];
   const [preview, setPreview] = useState(null);
   const [submitting, setSubmitting] = useState(false);
   const inputRef = useRef(null);
@@ -144,16 +153,18 @@ export default function EditBarangModal({ isOpen, onClose, barang, onSave, onSuc
         <div className="modal-form-group">
           <label className="modal-label">Kategori</label>
           <select
-  className="modal-select"
-  name="kategori_id"
-  value={form.kategori_id}
-  onChange={handleChange}
->
-  <option value="1">Aki Kering</option>
-  <option value="2">Aki Basah</option>
-  <option value="3">Aki Motor</option>
-  <option value="4">Kabel Aksesoris</option>
-</select>
+            className="modal-select"
+            name="kategori_id"
+            value={form.kategori_id}
+            onChange={handleChange}
+          >
+            <option value="">Pilih Kategori</option>
+            {categoryOptions.map((category) => (
+              <option key={category.id} value={String(category.id)}>
+                {category.nama}
+              </option>
+            ))}
+          </select>
         </div>
         <div className="modal-form-group">
           <label className="modal-label">Stok</label>

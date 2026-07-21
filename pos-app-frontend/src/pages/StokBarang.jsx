@@ -21,6 +21,7 @@ const categoryLabelMap = {
 
 function StokBarang() {
   const { user } = useAuth();
+  const isAdmin = user?.role === "admin";
   const [products, setProducts] = useState([]);
   const [categories, setCategories] = useState([]);
   const [tambahOpen, setTambahOpen] = useState(false);
@@ -100,11 +101,13 @@ const fetchCategories = async () => {
   };
 
   const handleEdit = (barang) => {
+    if (!isAdmin) return;
     setSelectedBarang(barang);
     setEditOpen(true);
   };
 
   const handleDelete = (barang) => {
+    if (!isAdmin) return;
     setSelectedBarang(barang);
     setDeleteOpen(true);
   };
@@ -220,10 +223,12 @@ const fetchCategories = async () => {
           <option value="newest">Terbaru</option>
           <option value="oldest">Terlama</option>
         </select>
-        <button className="add-btn" onClick={() => setTambahOpen(true)}>
-          <Plus size={16} />
-          Tambah Barang
-        </button>
+        {isAdmin && (
+          <button className="add-btn" onClick={() => setTambahOpen(true)}>
+            <Plus size={16} />
+            Tambah Barang
+          </button>
+        )}
       </div>
 
       <div className="product-table-card">
@@ -313,11 +318,13 @@ const fetchCategories = async () => {
         isOpen={tambahOpen}
         onClose={() => setTambahOpen(false)}
         onSuccess={getProduk}
+        categories={categories}
       />
       <EditBarangModal
         isOpen={editOpen}
         onClose={() => setEditOpen(false)}
         barang={selectedBarang}
+        categories={categories}
         onSave={handleSaveEdit}
         onSuccess={getProduk}
       />
@@ -331,6 +338,7 @@ const fetchCategories = async () => {
         isOpen={viewOpen}
         onClose={() => setViewOpen(false)}
         barang={selectedBarang}
+        categories={categories}
       />
     </div>
   );

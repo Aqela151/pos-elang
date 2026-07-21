@@ -60,7 +60,7 @@ function App() {
         <Route
           path="/dashboard"
           element={
-            <ProtectedRoute allowedRoles={["admin"]}>
+            <ProtectedRoute allowedRoles={["admin", "kasir"]}>
               <AppLayout>
                 <Dashboard />
               </AppLayout>
@@ -82,7 +82,7 @@ function App() {
         <Route
           path="/stok-barang"
           element={
-            <ProtectedRoute allowedRoles={["admin"]}>
+            <ProtectedRoute allowedRoles={["admin", "kasir"]}>
               <AppLayout>
                 <StokBarang />
               </AppLayout>
@@ -93,7 +93,7 @@ function App() {
         <Route
           path="/data-member"
           element={
-            <ProtectedRoute allowedRoles={["admin"]}>
+            <ProtectedRoute allowedRoles={["admin", "kasir"]}>
               <AppLayout>
                 <DataMember />
               </AppLayout>
@@ -104,7 +104,7 @@ function App() {
         <Route
           path="/laporan"
           element={
-            <ProtectedRoute allowedRoles={["admin"]}>
+            <ProtectedRoute allowedRoles={["admin", "kasir"]}>
               <AppLayout>
                 <Laporan />
               </AppLayout>

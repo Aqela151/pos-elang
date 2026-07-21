@@ -4,7 +4,7 @@ import { CloudUpload, Check } from "lucide-react";
 import api from "../../services/api";
 import { useAuth } from "../../context/AuthContext";
 
-export default function TambahBarangModal({ isOpen, onClose, onSuccess }) {
+export default function TambahBarangModal({ isOpen, onClose, onSuccess, categories = [] }) {
   const { user } = useAuth();
 
   const [preview, setPreview] = useState(null);
@@ -20,6 +20,15 @@ export default function TambahBarangModal({ isOpen, onClose, onSuccess }) {
     harga_grosir: "",
     stok: "",
   });
+
+  const categoryOptions = categories && categories.length
+    ? categories
+    : [
+        { id: "1", nama: "Aki Kering" },
+        { id: "2", nama: "Aki Basah" },
+        { id: "3", nama: "Aki Motor" },
+        { id: "4", nama: "Kabel Aksesoris" },
+      ];
   const inputRef = useRef(null);
 
   const handleUpload = (e) => {
@@ -145,10 +154,11 @@ export default function TambahBarangModal({ isOpen, onClose, onSuccess }) {
             onChange={handleChange}
           >
             <option value="">Pilih Kategori</option>
-            <option value="1">Aki Kering</option>
-            <option value="2">Aki Basah</option>
-            <option value="3">Aki Motor</option>
-            <option value="4">Kabel Aksesoris</option>
+            {categoryOptions.map((category) => (
+              <option key={category.id} value={String(category.id)}>
+                {category.nama}
+              </option>
+            ))}
           </select>
         </div>
 

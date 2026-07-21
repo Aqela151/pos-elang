@@ -1,11 +1,16 @@
 import Modal from "../Modal/Modal";
 import "./ViewBarangModal.css";
-import api from "../../services/api";
 
 const statusLabel = { aman: "Aman", menipis: "Menipis", habis: "Habis" };
 
-export default function ViewBarangModal({ isOpen, onClose, barang }) {
+export default function ViewBarangModal({ isOpen, onClose, barang, categories = [] }) {
   if (!barang) return null;
+
+  const getCategoryLabel = (categoryId) => {
+    const match = categories.find((c) => String(c.id) === String(categoryId));
+    if (match) return match.nama;
+    return categoryId || "Lainnya";
+  };
 
   return (
     <Modal isOpen={isOpen} onClose={onClose} title="Detail Barang">
@@ -21,7 +26,7 @@ export default function ViewBarangModal({ isOpen, onClose, barang }) {
           </div>
           <div className="view-field">
             <span className="view-label">Kategori</span>
-            <span className="view-value">{barang.kategori_id}</span>
+            <span className="view-value">{getCategoryLabel(barang.kategori_id)}</span>
           </div>
           <div className="view-field">
             <span className="view-label">Stok</span>

@@ -13,6 +13,7 @@ const levelLabel = { silver: "Silver", gold: "Gold", platinum: "Platinum" };
 
 function DataMember() {
   const { user } = useAuth();
+  const isAdmin = user?.role === "admin";
   const [members, setMembers] = useState([]);
   const [tambahOpen, setTambahOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
@@ -37,11 +38,13 @@ const getMember = async () => {
 };
 
   const handleEdit = (member) => {
+    if (!isAdmin) return;
     setSelectedMember(member);
     setEditOpen(true);
   };
 
   const handleDelete = (member) => {
+    if (!isAdmin) return;
     setSelectedMember(member);
     setDeleteOpen(true);
   };
@@ -100,10 +103,12 @@ const getMember = async () => {
         <div className="filter-select">
           Terbaru <ChevronDown size={14} />
         </div>
-        <button className="add-btn" onClick={() => setTambahOpen(true)}>
-          <Plus size={16} />
-          Tambah Member
-        </button>
+        {isAdmin && (
+          <button className="add-btn" onClick={() => setTambahOpen(true)}>
+            <Plus size={16} />
+            Tambah Member
+          </button>
+        )}
       </div>
 
       <div className="member-table-card">
@@ -144,10 +149,14 @@ const getMember = async () => {
       </td>
 
       <td>
-        <div className="aksi-btns">
-          <Pencil size={16} onClick={() => handleEdit(m)} />
-          <Trash2 size={16} onClick={() => handleDelete(m)} />
-        </div>
+        {isAdmin ? (
+          <div className="aksi-btns">
+            <Pencil size={16} onClick={() => handleEdit(m)} />
+            <Trash2 size={16} onClick={() => handleDelete(m)} />
+          </div>
+        ) : (
+          <span>-</span>
+        )}
       </td>
     </tr>
   ))}
